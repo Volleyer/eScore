@@ -2,11 +2,12 @@
 //  AppDelegate.m
 //  eScore
 //
-//  Created by 方壯雄 on 12/12/19.
+//  Created by 方壯雄 on 12/12/17.
 //  Copyright (c) 2012年 方壯雄. All rights reserved.
 //
 
 #import "AppDelegate.h"
+#import <SBJson/SBJson.h>
 
 @implementation AppDelegate
 
@@ -16,10 +17,38 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
-    self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
-    // Override point for customization after application launch.
-    self.window.backgroundColor = [UIColor whiteColor];
-    [self.window makeKeyAndVisible];
+    NSURL *url = [NSURL URLWithString:@"http://www.bsaila.com.tw/Controller/SearchController.aspx?TYPE=QuickSearch"];
+  
+    NSMutableDictionary* jsonObject = [NSMutableDictionary dictionary];
+    [jsonObject setObject:@"1" forKey:@"search_text"];
+
+    NSString* jsonRequest = [jsonObject JSONRepresentation];
+    
+    NSLog(@"Request: %@", jsonRequest);
+    
+    
+    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:url];
+    NSData *requestData = [NSData dataWithBytes:[jsonRequest UTF8String] length:[jsonRequest length]];
+    
+    [request setHTTPMethod:@"POST"];
+    [request setValue:@"application/json" forHTTPHeaderField:@"Accept"];
+    [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+    [request setValue:@"json" forHTTPHeaderField:@"Data-Type"];
+    [request setValue:[NSString stringWithFormat:@"%d", [requestData length]] forHTTPHeaderField:@"Content-Length"];
+    [request setHTTPBody: requestData];
+
+    NSData *returnData = [NSURLConnection sendSynchronousRequest: request returningResponse: nil error: nil ];
+    NSString *returnString = [[NSString alloc] initWithData:returnData encoding: NSUTF8StringEncoding];
+    
+    NSLog(@"returnData: %@", returnString);
+    
+    NSMutableDictionary* jsonResult = [returnString JSONValue];
+    NSArray* cups = [jsonResult objectForKey:@"Cup"];
+    for(int i=0;i<cups.count;i++)
+    {
+        NSMutableDictionary* cup = [cups objectAtIndex:i];
+        NSLog(@"Cup ID : %@", [cup objectForKey:@"ID"]);
+    }
     return YES;
 }
 
